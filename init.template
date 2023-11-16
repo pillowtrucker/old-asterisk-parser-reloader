@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+#       /etc/rc.d/init.d/reloader
+#
+#
+# chkconfig: 2345 20 80
+# description: extensions.conf reloader
+
+# Source function library.
+. /etc/init.d/functions
+
+THEBINARY=/home/reloader/Yggdrasil/client.py
+WRAPPER="${THEBINARY}_run"
+PIDFILE=/var/run/reloader.pid
+
+start() {
+        echo -n "Starting extensions.conf reloader: "
+        daemon --user reloader --pidfile $PIDFILE $WRAPPER $THEBINARY $PIDFILE
+        PID=`cat $PIDFILE`
+        if [ -z $PID ]; then
+          printf "%s\n" "Fail"
+        else
+          touch /var/lock/subsys/rldr
+          printf "%s\n" "Ok"
+        fi
+        return 0
+}
+
+stop() {
+        echo -n "Shutting down extensions.conf reloader: "
+        PID=`cat $PIDFILE`
+        if [ -z $PID ]; then
+            printf "%s\n" "Fail"
+        else
+          kill $PID
+          sleep 2
+          kill -9 $PID 2> /dev/null
+          rm -f /var/lock/subsys/rldr
+          echo "" > /var/run/reloader.pid
+          printf "%s\n" "Ok"
+        fi
+        return 0
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    reload)
+        ;;
+    condrestart)
+        ;;
+    *)
+        echo "Usage: /etc/init.d/reloader {start|stop|restart}"
+        exit 1
+        ;;
+esac
+exit $?
+
